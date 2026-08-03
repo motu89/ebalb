@@ -15,6 +15,15 @@ def list_listings():
     return render_template("listings.html", listings=listings)
 
 
+@listings_bp.route("/<int:listing_id>")
+@login_required
+def listing_detail(listing_id):
+    """Full, untruncated detail for one publish attempt - use this to read the complete
+    eBay error JSON when the Listings table's preview column cuts it off."""
+    listing = Listing.query.get_or_404(listing_id)
+    return render_template("listing_detail.html", listing=listing)
+
+
 @listings_bp.route("/publish", methods=["GET", "POST"])
 @login_required
 def publish():

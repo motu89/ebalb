@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Listing detail — Listing Pipeline{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>{{ listing.product.title if listing.product else 'Listing' }}</h1>
+    <p>Store: {{ listing.account.nickname if listing.account else '—' }} · Attempt #{{ listing.id }} · {{ listing.created_at.strftime('%b %d, %Y %H:%M') }}</p>
+  </div>
+  <a href="{{ url_for('listings.list_listings') }}" class="btn btn-secondary">Back to listings</a>
+</div>
+
+<div class="panel" style="padding: 20px;">
+  <div style="margin-bottom:16px;">
+    {% if listing.status == 'success' %}<span class="pill pill-success">Published</span>
+    {% elif listing.status == 'failed' %}<span class="pill pill-failed">Failed</span>
+    {% else %}<span class="pill pill-pending">Pending</span>{% endif %}
+  </div>
+
+  <div style="font-size:13px; margin-bottom:8px;" class="text-muted">
+    eBay listing ID: <span class="mono">{{ listing.ebay_listing_id or '—' }}</span><br>
+    Offer ID: <span class="mono">{{ listing.offer_id or '—' }}</span><br>
+    Method: <span class="mono">{{ listing.method }}</span>
+  </div>
+
+  {% if listing.error_message %}
+  <h3 style="margin-top:24px; font-size:14px;">Full error detail</h3>
+  <pre class="mono" style="white-space: pre-wrap; word-break: break-word; background: rgba(255,255,255,0.04); padding: 14px; border-radius: 8px; font-size: 12.5px; line-height:1.6;">{{ listing.error_message }}</pre>
+  {% endif %}
+</div>
+{% endblock %}

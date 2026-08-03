@@ -27,7 +27,12 @@
         </td>
         <td class="mono">{{ l.ebay_listing_id or '—' }}</td>
         <td class="text-muted" style="max-width: 320px; font-size:12px;">
-          {{ l.error_message[:160] if l.error_message else '—' }}
+          {% if l.error_message %}
+            {{ l.error_message[:160] }}{% if l.error_message|length > 160 %}…{% endif %}
+            <br><a href="{{ url_for('listings.listing_detail', listing_id=l.id) }}">view full error</a>
+          {% else %}
+            —
+          {% endif %}
         </td>
         <td class="text-muted">{{ l.created_at.strftime('%b %d, %H:%M') }}</td>
       </tr>
