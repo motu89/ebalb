@@ -93,8 +93,35 @@ def disconnect(account_id):
 @accounts_bp.route("/<int:account_id>/location", methods=["POST"])
 @login_required
 def set_location(account_id):
+    """Actually creates the location on eBay's side (not just a local label)."""
     account = EbayAccount.query.get_or_404(account_id)
-    account.merchant_location_key = request.form.get("merchant_location_key", "").strip()
+
+    if not account.is_connected:
+        flash("Connect this store to eBay before adding a location.", "error")
+        return redirect(url_for("accounts.list_accounts"))
+
+    location_key = request.form.get("location_key", "").strip()
+    name = request.form.get("location_name", "").strip()
+    address_line1 = request.form.get("address_line1", "").strip()
+    city = request.form.get("city", "").strip()
+    state = request.form.get("state", "").strip()
+    postal_code = request.form.get("postal_code", "").strip()
+    country = request.form.get("country", "US").strip() or "US"
+
+    if not all([location_key, name, address_line1, city, state, postal_code]):
+        flash("Fill in every field to create a location.", "error")
+        return redirect(url_for("accounts.list_accounts"))
+
+    try:
+        access_token = ebay_api.get_fresh_access_token(account.refresh_token)
+        ebay_api.create_inventory_location(
+            access_token, location_key, name, address_line1, city, state, postal_code, country,
+        )
+    except ebay_api.EbayAPIError as e:
+        flash(f"Creating the location on eBay failed: {e.payload or e}", "error")
+        return redirect(url_for("accounts.list_accounts"))
+
+    account.merchant_location_key = location_key
     db.session.commit()
-    flash("Ship-from location saved.", "success")
+    flash(f'Location "{location_key}" created on eBay and saved to "{account.nickname}".', "success")
     return redirect(url_for("accounts.list_accounts"))

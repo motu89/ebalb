@@ -45,15 +45,26 @@
         <div>Return policy: <span class="mono">{{ account.return_policy_id or 'none found' }}</span></div>
       </div>
 
+      {% if account.merchant_location_key %}
+      <div style="margin-top:14px; font-size:12.5px;" class="text-muted">
+        Ship-from location: <span class="mono">{{ account.merchant_location_key }}</span> ✓
+      </div>
+      {% else %}
       <form method="POST" action="{{ url_for('accounts.set_location', account_id=account.id) }}" style="margin-top:14px;">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <label for="loc-{{ account.id }}">Ship-from location key</label>
-        <input type="text" id="loc-{{ account.id }}" name="merchant_location_key"
-               value="{{ account.merchant_location_key or '' }}" placeholder="e.g. warehouse-1">
+        <label>No ship-from location yet — create one on eBay:</label>
+        <input type="text" name="location_key" placeholder="Location key, e.g. warehouse-1" required style="margin-bottom:8px;">
+        <input type="text" name="location_name" placeholder="Location name, e.g. Main Warehouse" required style="margin-bottom:8px;">
+        <input type="text" name="address_line1" placeholder="Street address" required style="margin-bottom:8px;">
+        <input type="text" name="city" placeholder="City" required style="margin-bottom:8px;">
+        <input type="text" name="state" placeholder="State / province, e.g. CA" required style="margin-bottom:8px;">
+        <input type="text" name="postal_code" placeholder="Postal code" required style="margin-bottom:8px;">
+        <input type="text" name="country" placeholder="Country code" value="US" style="margin-bottom:8px;">
         <div class="btn-row">
-          <button type="submit" class="btn btn-secondary">Save</button>
+          <button type="submit" class="btn btn-secondary">Create location on eBay</button>
         </div>
       </form>
+      {% endif %}
 
       <form method="POST" action="{{ url_for('accounts.disconnect', account_id=account.id) }}"
             data-confirm="Disconnect {{ account.nickname }}? You'll need to reauthorize it to publish again."

@@ -102,6 +102,35 @@ def _headers(access_token, content_language="en-US"):
     }
 
 
+def create_inventory_location(access_token, location_key, name, address_line1, city,
+                                state_or_province, postal_code, country="US"):
+    """
+    PUT /sell/inventory/v1/location/{merchantLocationKey}
+    Every seller needs at least one of these before any offer can be published -
+    it's what eBay uses to calculate shipping. Works identically in sandbox and production.
+    """
+    base = current_app.config["EBAY_API_BASE"]
+    url = f"{base}/sell/inventory/v1/location/{location_key}"
+    payload = {
+        "location": {
+            "address": {
+                "addressLine1": address_line1,
+                "city": city,
+                "stateOrProvince": state_or_province,
+                "postalCode": postal_code,
+                "country": country,
+            }
+        },
+        "name": name,
+        "merchantLocationStatus": "ENABLED",
+        "locationTypes": ["WAREHOUSE"],
+    }
+    resp = requests.post(url, json=payload, headers=_headers(access_token), timeout=20)
+    if resp.status_code not in (200, 201, 204):
+        raise EbayAPIError(f"Creating location '{location_key}' failed", resp.status_code, resp.text)
+    return True
+
+
 def get_business_policies(access_token, marketplace_id="EBAY_US"):
     """Fetch payment / fulfillment / return policy IDs already configured on the seller's account."""
     base = current_app.config["EBAY_API_BASE"]
