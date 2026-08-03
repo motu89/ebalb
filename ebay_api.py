@@ -131,6 +131,26 @@ def create_inventory_location(access_token, location_key, name, address_line1, c
     return True
 
 
+import json
+
+
+def _extract_duplicate_policy_id(payload_text):
+    """
+    When eBay rejects a policy creation because the name already exists (errorId 20400),
+    it hands back the existing policy's ID in the error parameters - reuse it instead of failing.
+    """
+    try:
+        data = json.loads(payload_text)
+        params = data["errors"][0].get("parameters", [])
+        for p in params:
+            if p.get("name") in ("Shipping Profile Id", "Payment Profile Id",
+                                   "Return Profile Id", "DuplicateProfileId"):
+                return p.get("value")
+    except Exception:
+        return None
+    return None
+
+
 def create_fulfillment_policy(access_token, name, shipping_service="USPSPriority",
                                 handling_time_days=1, marketplace_id="EBAY_US"):
     """
@@ -162,6 +182,9 @@ def create_fulfillment_policy(access_token, name, shipping_service="USPSPriority
     }
     resp = requests.post(url, json=payload, headers=_headers(access_token), timeout=20)
     if resp.status_code not in (200, 201):
+        existing_id = _extract_duplicate_policy_id(resp.text)
+        if existing_id:
+            return existing_id
         raise EbayAPIError("Creating fulfillment policy failed", resp.status_code, resp.text)
     return resp.json().get("fulfillmentPolicyId")
 
@@ -178,6 +201,9 @@ def create_payment_policy(access_token, name, marketplace_id="EBAY_US"):
     }
     resp = requests.post(url, json=payload, headers=_headers(access_token), timeout=20)
     if resp.status_code not in (200, 201):
+        existing_id = _extract_duplicate_policy_id(resp.text)
+        if existing_id:
+            return existing_id
         raise EbayAPIError("Creating payment policy failed", resp.status_code, resp.text)
     return resp.json().get("paymentPolicyId")
 
@@ -197,6 +223,9 @@ def create_return_policy(access_token, name, return_days=30, marketplace_id="EBA
     }
     resp = requests.post(url, json=payload, headers=_headers(access_token), timeout=20)
     if resp.status_code not in (200, 201):
+        existing_id = _extract_duplicate_policy_id(resp.text)
+        if existing_id:
+            return existing_id
         raise EbayAPIError("Creating return policy failed", resp.status_code, resp.text)
     return resp.json().get("returnPolicyId")
 
