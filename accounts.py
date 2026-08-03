@@ -73,6 +73,31 @@ def debug_shipping(account_id):
     })
 
 
+@accounts_bp.route("/<int:account_id>/find_category")
+@login_required
+def find_category(account_id):
+    """
+    Look up real, currently-valid LEAF category IDs for a search term via eBay's
+    Taxonomy API - use this instead of guessing category IDs by hand.
+    Visit e.g. /accounts/1/find_category?q=yoga+mat
+    """
+    account = EbayAccount.query.get_or_404(account_id)
+    if not account.is_connected:
+        return jsonify({"error": "Account is not connected to eBay yet."}), 400
+
+    query = request.args.get("q", "").strip()
+    if not query:
+        return jsonify({"error": "Pass a search term, e.g. ?q=yoga+mat"}), 400
+
+    try:
+        access_token = ebay_api.get_fresh_access_token(account.refresh_token)
+        suggestions = ebay_api.suggest_leaf_categories(access_token, query)
+    except ebay_api.EbayAPIError as e:
+        return jsonify({"error": str(e), "detail": e.payload}), 502
+
+    return jsonify({"query": query, "leaf_categories": suggestions})
+
+
 @accounts_bp.route("/new", methods=["POST"])
 @login_required
 def create_account():

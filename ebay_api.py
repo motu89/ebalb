@@ -313,6 +313,39 @@ def get_valid_shipping_services(access_token, marketplace_id="EBAY_US"):
     return resp.json().get("shippingServices", [])
 
 
+def get_default_category_tree_id(access_token, marketplace_id="EBAY_US"):
+    """GET /commerce/taxonomy/v1/get_default_category_tree_id - the category tree eBay uses for this marketplace."""
+    base = current_app.config["EBAY_API_BASE"]
+    url = f"{base}/commerce/taxonomy/v1/get_default_category_tree_id?marketplace_id={marketplace_id}"
+    resp = requests.get(url, headers=_headers(access_token), timeout=20)
+    if resp.status_code != 200:
+        raise EbayAPIError("Fetching default category tree failed", resp.status_code, resp.text)
+    return resp.json().get("categoryTreeId")
+
+
+def suggest_leaf_categories(access_token, query, marketplace_id="EBAY_US"):
+    """
+    GET /commerce/taxonomy/v1/category_tree/{id}/get_category_suggestions?q=...
+    Returns real, currently-valid LEAF categories that match a product name -
+    the reliable way to get a categoryId, instead of guessing IDs by hand.
+    """
+    base = current_app.config["EBAY_API_BASE"]
+    tree_id = get_default_category_tree_id(access_token, marketplace_id)
+    url = f"{base}/commerce/taxonomy/v1/category_tree/{tree_id}/get_category_suggestions"
+    resp = requests.get(url, headers=_headers(access_token), params={"q": query}, timeout=20)
+    if resp.status_code != 200:
+        raise EbayAPIError("Fetching category suggestions failed", resp.status_code, resp.text)
+    suggestions = resp.json().get("categorySuggestions", [])
+    return [
+        {
+            "categoryId": s["category"]["categoryId"],
+            "categoryName": s["category"]["categoryName"],
+            "path": " > ".join(a["categoryName"] for a in s.get("categoryTreeNodeAncestors", [])[::-1]),
+        }
+        for s in suggestions
+    ]
+
+
 def create_or_update_inventory_item(access_token, sku, product):
     """PUT /sell/inventory/v1/inventory_item/{sku} — step (a) of publishing a listing."""
     base = current_app.config["EBAY_API_BASE"]
