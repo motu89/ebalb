@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
+from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, jsonify
 from flask_login import login_required
 
 from extensions import db
@@ -14,6 +14,49 @@ accounts_bp = Blueprint("accounts", __name__, url_prefix="/accounts")
 def list_accounts():
     accounts = EbayAccount.query.order_by(EbayAccount.created_at.desc()).all()
     return render_template("accounts.html", accounts=accounts, ebay_env=current_app.config["EBAY_ENV"])
+
+
+@accounts_bp.route("/<int:account_id>/debug_shipping")
+@login_required
+def debug_shipping(account_id):
+    """
+    Diagnostic page for errorId 25007/25008/25009: shows the shipping service
+    code(s) actually configured on this account's fulfillment policy, and
+    cross-checks each one against eBay's current list of valid codes for the
+    marketplace (validForSellingFlow). Visit this URL directly in the browser
+    while logged in, e.g. /accounts/1/debug_shipping
+    """
+    account = EbayAccount.query.get_or_404(account_id)
+    if not account.is_connected:
+        return jsonify({"error": "Account is not connected to eBay yet."}), 400
+    if not account.fulfillment_policy_id:
+        return jsonify({"error": "No fulfillment_policy_id saved on this account."}), 400
+
+    try:
+        access_token = ebay_api.get_fresh_access_token(account.refresh_token)
+        policy = ebay_api.get_fulfillment_policy(access_token, account.fulfillment_policy_id)
+        valid_services = ebay_api.get_valid_shipping_services(access_token)
+    except ebay_api.EbayAPIError as e:
+        return jsonify({"error": str(e), "detail": e.payload}), 502
+
+    valid_codes = {s["shippingService"]: s.get("validForSellingFlow", False) for s in valid_services}
+
+    configured_codes = []
+    for option in policy.get("shippingOptions", []):
+        for svc in option.get("shippingServices", []):
+            code = svc.get("shippingServiceCode")
+            configured_codes.append({
+                "shippingServiceCode": code,
+                "optionType": option.get("optionType"),
+                "is_currently_valid": valid_codes.get(code, "UNKNOWN - not in eBay's current list"),
+            })
+
+    return jsonify({
+        "fulfillment_policy_id": account.fulfillment_policy_id,
+        "policy_name": policy.get("name"),
+        "configured_shipping_services": configured_codes,
+        "raw_policy": policy,
+    })
 
 
 @accounts_bp.route("/new", methods=["POST"])

@@ -278,6 +278,31 @@ def get_business_policies(access_token, marketplace_id="EBAY_US"):
     }
 
 
+def get_fulfillment_policy(access_token, fulfillment_policy_id):
+    """GET /sell/account/v1/fulfillment_policy/{id} - raw policy detail, used for diagnostics."""
+    base = current_app.config["EBAY_API_BASE"]
+    url = f"{base}/sell/account/v1/fulfillment_policy/{fulfillment_policy_id}"
+    resp = requests.get(url, headers=_headers(access_token), timeout=20)
+    if resp.status_code != 200:
+        raise EbayAPIError("Fetching fulfillment policy failed", resp.status_code, resp.text)
+    return resp.json()
+
+
+def get_valid_shipping_services(access_token, marketplace_id="EBAY_US"):
+    """
+    GET /sell/metadata/v1/shipping/marketplace/{marketplace_id}/get_shipping_services
+    Returns every shipping service code eBay currently accepts for this marketplace,
+    each flagged with validForSellingFlow - the definitive way to check whether a
+    code like 'USPSPriority' is still usable, instead of guessing.
+    """
+    base = current_app.config["EBAY_API_BASE"]
+    url = f"{base}/sell/metadata/v1/shipping/marketplace/{marketplace_id}/get_shipping_services"
+    resp = requests.get(url, headers=_headers(access_token), timeout=20)
+    if resp.status_code != 200:
+        raise EbayAPIError("Fetching valid shipping services failed", resp.status_code, resp.text)
+    return resp.json().get("shippingServices", [])
+
+
 def create_or_update_inventory_item(access_token, sku, product):
     """PUT /sell/inventory/v1/inventory_item/{sku} — step (a) of publishing a listing."""
     base = current_app.config["EBAY_API_BASE"]
