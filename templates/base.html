@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Listing Pipeline{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+{% if current_user.is_authenticated %}
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">◆</span>
+      <span class="brand-text">Listing<strong>Pipeline</strong></span>
+    </div>
+    <nav class="nav">
+      <a href="{{ url_for('main.dashboard') }}" class="nav-item {{ 'active' if request.endpoint == 'main.dashboard' }}">
+        <span class="nav-icon">⌁</span> Overview
+      </a>
+      <a href="{{ url_for('accounts.list_accounts') }}" class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('accounts.') }}">
+        <span class="nav-icon">⛁</span> Stores
+      </a>
+      <a href="{{ url_for('products.list_products') }}" class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('products.') }}">
+        <span class="nav-icon">▤</span> Products
+      </a>
+      <a href="{{ url_for('listings.publish') }}" class="nav-item {{ 'active' if request.endpoint == 'listings.publish' }}">
+        <span class="nav-icon">▲</span> Publish
+      </a>
+      <a href="{{ url_for('listings.list_listings') }}" class="nav-item {{ 'active' if request.endpoint == 'listings.list_listings' }}">
+        <span class="nav-icon">≡</span> Listings
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="env-badge">{{ config.EBAY_ENV | upper }}</span>
+      <a href="{{ url_for('auth.logout') }}" class="logout-link">Sign out</a>
+    </div>
+  </aside>
+  <main class="content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-stack">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% else %}
+  {% block auth_content %}{% endblock %}
+{% endif %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

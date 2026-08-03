@@ -1,0 +1,4 @@
+sku,title,price,description,quantity,category_id,brand,condition,image_url
+SKU-1001,Wireless Bluetooth Earbuds,24.99,Compact wireless earbuds with charging case,10,9355,SoundCore,NEW,https://example.com/images/earbuds.jpg
+SKU-1002,Stainless Steel Water Bottle,14.50,Insulated 32oz water bottle keeps drinks cold 24h,25,20625,HydroFlow,NEW,https://example.com/images/bottle.jpg
+SKU-1003,Yoga Mat Non-Slip,19.99,6mm thick non-slip exercise yoga mat,15,15273,FlexFit,NEW,https://example.com/images/mat.jpg

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Upload products — Listing Pipeline{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Upload products</h1>
+    <p>Import a CSV or Excel file. Rows become products ready to publish.</p>
+  </div>
+</div>
+
+<div class="form-card">
+  <form method="POST" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="csv_file">CSV or Excel file</label>
+    <input type="file" id="csv_file" name="csv_file" accept=".csv,.xlsx,.xls" required>
+    <div class="btn-row">
+      <button type="submit" class="btn">Import</button>
+    </div>
+  </form>
+</div>
+
+<div class="panel" style="margin-top:24px;">
+  <div class="panel-header">Expected columns</div>
+  <table>
+    <thead><tr><th>Column</th><th>Required</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">sku</td><td>Yes</td><td>Your own unique product code</td></tr>
+      <tr><td class="mono">title</td><td>Yes</td><td>Listing title (trimmed to 80 characters)</td></tr>
+      <tr><td class="mono">price</td><td>Yes</td><td>Number, e.g. 24.99</td></tr>
+      <tr><td class="mono">description</td><td>No</td><td>Falls back to title if left blank</td></tr>
+      <tr><td class="mono">quantity</td><td>No</td><td>Defaults to 1</td></tr>
+      <tr><td class="mono">category_id</td><td>No</td><td>eBay category ID — look this up in the Taxonomy API if unsure</td></tr>
+      <tr><td class="mono">brand</td><td>No</td><td>Used as the Brand aspect</td></tr>
+      <tr><td class="mono">condition</td><td>No</td><td>NEW, USED, etc. Defaults to NEW</td></tr>
+      <tr><td class="mono">image_url</td><td>No</td><td>A public, direct image link</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}

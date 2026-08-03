@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Overview — Listing Pipeline{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Overview</h1>
+    <p>How your stores and listings are doing right now.</p>
+  </div>
+  <a href="{{ url_for('listings.publish') }}" class="btn">Publish listings</a>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="label">Connected stores</div>
+    <div class="value accent">{{ connected_accounts }} <span class="mono text-muted" style="font-size:14px;">/ {{ total_accounts }}</span></div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Products imported</div>
+    <div class="value">{{ total_products }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Listings published</div>
+    <div class="value accent">{{ successful_listings }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Listings failed</div>
+    <div class="value {{ 'coral' if failed_listings else '' }}">{{ failed_listings }}</div>
+  </div>
+</div>
+
+<div class="pipeline">
+  <div class="pipeline-title">Listing pipeline</div>
+  <div class="pipeline-track">
+    <div class="pipeline-stage">
+      <div class="count">{{ total_products }}</div>
+      <div class="name">Imported</div>
+    </div>
+    <div class="pipeline-line"></div>
+    <div class="pipeline-stage">
+      <div class="count">{{ total_listings }}</div>
+      <div class="name">Sent to eBay</div>
+    </div>
+    <div class="pipeline-line"></div>
+    <div class="pipeline-stage">
+      <div class="count">{{ successful_listings }}</div>
+      <div class="name">Live</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    Recent activity
+    <a href="{{ url_for('listings.list_listings') }}" class="mono text-muted" style="font-size:12px;">View all →</a>
+  </div>
+  {% if recent %}
+  <table>
+    <thead>
+      <tr><th>Product</th><th>Store</th><th>Status</th><th>eBay listing</th><th>When</th></tr>
+    </thead>
+    <tbody>
+      {% for l in recent %}
+      <tr>
+        <td>{{ l.product.title if l.product else '—' }}</td>
+        <td>{{ l.account.nickname if l.account else '—' }}</td>
+        <td>
+          {% if l.status == 'success' %}<span class="pill pill-success">Published</span>
+          {% elif l.status == 'failed' %}<span class="pill pill-failed">Failed</span>
+          {% else %}<span class="pill pill-pending">Pending</span>{% endif %}
+        </td>
+        <td class="mono">{{ l.ebay_listing_id or '—' }}</td>
+        <td class="text-muted">{{ l.created_at.strftime('%b %d, %H:%M') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">Nothing published yet. Connect a store and upload a product list to get started.</div>
+  {% endif %}
+</div>
+{% endblock %}

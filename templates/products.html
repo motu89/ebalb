@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Products — Listing Pipeline{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Products</h1>
+    <p>Everything imported and ready to publish.</p>
+  </div>
+  <a href="{{ url_for('products.upload') }}" class="btn">Upload CSV</a>
+</div>
+
+<div class="panel">
+  {% if products %}
+  <table>
+    <thead>
+      <tr><th>SKU</th><th>Title</th><th>Price</th><th>Qty</th><th>Brand</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for p in products %}
+      <tr>
+        <td class="mono">{{ p.sku }}</td>
+        <td>{{ p.title }}</td>
+        <td>${{ "%.2f"|format(p.price) }}</td>
+        <td>{{ p.quantity }}</td>
+        <td class="text-muted">{{ p.brand or '—' }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('products.delete', product_id=p.id) }}"
+                data-confirm="Remove this product?">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger" style="padding:5px 10px; font-size:12px;">Remove</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">No products yet. <a href="{{ url_for('products.upload') }}" style="color:var(--accent);">Upload a CSV</a> to get started.</div>
+  {% endif %}
+</div>
+{% endblock %}

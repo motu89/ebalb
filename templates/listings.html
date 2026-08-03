@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Listings — Listing Pipeline{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Listings</h1>
+    <p>Every publish attempt, most recent first.</p>
+  </div>
+  <a href="{{ url_for('listings.publish') }}" class="btn">Publish more</a>
+</div>
+
+<div class="panel">
+  {% if listings %}
+  <table>
+    <thead>
+      <tr><th>Product</th><th>Store</th><th>Status</th><th>eBay listing ID</th><th>Detail</th><th>When</th></tr>
+    </thead>
+    <tbody>
+      {% for l in listings %}
+      <tr>
+        <td>{{ l.product.title if l.product else '—' }}</td>
+        <td>{{ l.account.nickname if l.account else '—' }}</td>
+        <td>
+          {% if l.status == 'success' %}<span class="pill pill-success">Published</span>
+          {% elif l.status == 'failed' %}<span class="pill pill-failed">Failed</span>
+          {% else %}<span class="pill pill-pending">Pending</span>{% endif %}
+        </td>
+        <td class="mono">{{ l.ebay_listing_id or '—' }}</td>
+        <td class="text-muted" style="max-width: 320px; font-size:12px;">
+          {{ l.error_message[:160] if l.error_message else '—' }}
+        </td>
+        <td class="text-muted">{{ l.created_at.strftime('%b %d, %H:%M') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">Nothing published yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

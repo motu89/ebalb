@@ -1,0 +1,42 @@
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+
+# Flask / app data
+instance/
+*.db
+*.sqlite
+*.sqlite3
+ebaybot.db
+
+# Logs
+*.log
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Distribution / build
+build/
+dist/
+
+# Render (auto-generated during build/deploy, don't commit)
+.render/
+.render-build/
+render_build.log
+pip-log.txt
+pip-delete-this-directory.txt
+.cache/
+.python-version

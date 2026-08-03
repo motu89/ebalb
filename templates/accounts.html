@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Stores — Listing Pipeline{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Stores</h1>
+    <p>Each store is one eBay seller account. Connect it once — no login needed after that.</p>
+  </div>
+</div>
+
+<div class="form-card" style="margin-bottom: 28px;">
+  <form method="POST" action="{{ url_for('accounts.create_account') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="nickname">Add a new store</label>
+    <input type="text" id="nickname" name="nickname" placeholder="e.g. Main Store, Sneaker Outlet" required>
+    <div class="btn-row">
+      <button type="submit" class="btn">Add store</button>
+    </div>
+  </form>
+</div>
+
+<div class="card-grid">
+  {% for account in accounts %}
+  <div class="panel" style="padding: 20px;">
+    <div style="display:flex; justify-content:space-between; align-items:start;">
+      <div>
+        <h3 style="font-size:16px;">{{ account.nickname }}</h3>
+        <p class="text-muted mono" style="font-size:12px; margin-top:4px;">#{{ account.id }}</p>
+      </div>
+      {% if account.is_connected %}
+        <span class="pill pill-success">Connected</span>
+      {% else %}
+        <span class="pill pill-pending">Not connected</span>
+      {% endif %}
+    </div>
+
+    {% if not account.is_connected %}
+      <a href="{{ url_for('accounts.connect', account_id=account.id) }}" class="btn" style="margin-top:16px; width:100%;">
+        Connect to eBay ({{ ebay_env }})
+      </a>
+    {% else %}
+      <div style="margin-top:16px; font-size:12.5px;" class="text-muted">
+        <div>Payment policy: <span class="mono">{{ account.payment_policy_id or 'none found' }}</span></div>
+        <div>Fulfillment policy: <span class="mono">{{ account.fulfillment_policy_id or 'none found' }}</span></div>
+        <div>Return policy: <span class="mono">{{ account.return_policy_id or 'none found' }}</span></div>
+      </div>
+
+      <form method="POST" action="{{ url_for('accounts.set_location', account_id=account.id) }}" style="margin-top:14px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="loc-{{ account.id }}">Ship-from location key</label>
+        <input type="text" id="loc-{{ account.id }}" name="merchant_location_key"
+               value="{{ account.merchant_location_key or '' }}" placeholder="e.g. warehouse-1">
+        <div class="btn-row">
+          <button type="submit" class="btn btn-secondary">Save</button>
+        </div>
+      </form>
+
+      <form method="POST" action="{{ url_for('accounts.disconnect', account_id=account.id) }}"
+            data-confirm="Disconnect {{ account.nickname }}? You'll need to reauthorize it to publish again."
+            style="margin-top:10px;">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger" style="width:100%;">Disconnect</button>
+      </form>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="empty-state" style="grid-column: 1/-1;">No stores yet. Add one above to get started.</div>
+  {% endfor %}
+</div>
+{% endblock %}
