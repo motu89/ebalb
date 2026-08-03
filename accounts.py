@@ -70,8 +70,10 @@ def oauth_callback():
         account.fulfillment_policy_id = policies["fulfillment_policy_id"]
         account.payment_policy_id = policies["payment_policy_id"]
         account.return_policy_id = policies["return_policy_id"]
-    except ebay_api.EbayAPIError:
-        # Not fatal - the seller may not have policies set up yet in sandbox
+    except Exception:
+        # Not fatal - the seller may not have policies set up yet in sandbox,
+        # or eBay's response shape didn't match what we expected. Either way,
+        # the account is still connected; policies can be created later.
         pass
 
     db.session.commit()

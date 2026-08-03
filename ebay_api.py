@@ -254,9 +254,9 @@ def get_business_policies(access_token, marketplace_id="EBAY_US"):
     base = current_app.config["EBAY_API_BASE"]
     headers = {"Authorization": f"Bearer {access_token}"}
 
-    def _first_id(resp_json, key):
+    def _first_id(resp_json, key, id_field):
         items = resp_json.get(key, [])
-        return items[0][f"{key[:-1]}Id"] if items else None
+        return items[0].get(id_field) if items else None
 
     fulfillment = requests.get(
         f"{base}/sell/account/v1/fulfillment_policy?marketplace_id={marketplace_id}",
@@ -272,9 +272,9 @@ def get_business_policies(access_token, marketplace_id="EBAY_US"):
     ).json()
 
     return {
-        "fulfillment_policy_id": _first_id(fulfillment, "fulfillmentPolicies"),
-        "payment_policy_id": _first_id(payment, "paymentPolicies"),
-        "return_policy_id": _first_id(ret, "returnPolicies"),
+        "fulfillment_policy_id": _first_id(fulfillment, "fulfillmentPolicies", "fulfillmentPolicyId"),
+        "payment_policy_id": _first_id(payment, "paymentPolicies", "paymentPolicyId"),
+        "return_policy_id": _first_id(ret, "returnPolicies", "returnPolicyId"),
     }
 
 
