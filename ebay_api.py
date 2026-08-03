@@ -363,6 +363,36 @@ def get_offer_by_sku(access_token, sku, marketplace_id="EBAY_US"):
     return offers[0]["offerId"] if offers else None
 
 
+def update_offer(access_token, offer_id, sku, product, category_id, policies, merchant_location_key,
+                  marketplace_id="EBAY_US"):
+    """PUT /sell/inventory/v1/offer/{offerId} - overwrites an existing offer with current data.
+    Used when an offer for a SKU already exists (errorId 25002) so stale/incomplete offers
+    (e.g. missing listingPolicies from an earlier attempt) get corrected instead of reused as-is."""
+    base = current_app.config["EBAY_API_BASE"]
+    url = f"{base}/sell/inventory/v1/offer/{offer_id}"
+    payload = {
+        "sku": sku,
+        "marketplaceId": marketplace_id,
+        "format": "FIXED_PRICE",
+        "availableQuantity": product.quantity,
+        "categoryId": category_id or product.category_id,
+        "listingDescription": product.description or product.title,
+        "pricingSummary": {
+            "price": {"value": f"{product.price:.2f}", "currency": "USD"}
+        },
+        "listingPolicies": {
+            "fulfillmentPolicyId": policies["fulfillment_policy_id"],
+            "paymentPolicyId": policies["payment_policy_id"],
+            "returnPolicyId": policies["return_policy_id"],
+        },
+        "merchantLocationKey": merchant_location_key,
+    }
+    resp = requests.put(url, json=payload, headers=_headers(access_token), timeout=20)
+    if resp.status_code not in (200, 204):
+        raise EbayAPIError(f"Updating offer failed for {sku}", resp.status_code, resp.text)
+    return offer_id
+
+
 def create_offer(access_token, sku, product, category_id, policies, merchant_location_key,
                   marketplace_id="EBAY_US"):
     """POST /sell/inventory/v1/offer — step (b), turns the inventory item into a sellable offer."""
@@ -388,11 +418,16 @@ def create_offer(access_token, sku, product, category_id, policies, merchant_loc
     }
     resp = requests.post(url, json=payload, headers=_headers(access_token), timeout=20)
     if resp.status_code not in (200, 201):
-        # errorId 25002: an offer for this SKU already exists (likely from an earlier attempt) - reuse it.
+        # errorId 25002: an offer for this SKU already exists (likely from an earlier attempt,
+        # possibly created before policies/location were set up correctly). Rather than reusing
+        # it as-is, push the current correct data onto it so it's no longer stale/incomplete.
         if resp.status_code == 400 and "25002" in resp.text and "Offer entity already exist" in resp.text:
             existing_offer_id = get_offer_by_sku(access_token, sku, marketplace_id)
             if existing_offer_id:
-                return existing_offer_id
+                return update_offer(
+                    access_token, existing_offer_id, sku, product, category_id,
+                    policies, merchant_location_key, marketplace_id,
+                )
         raise EbayAPIError(f"Offer creation failed for {sku}", resp.status_code, resp.text)
     return resp.json().get("offerId")
 
