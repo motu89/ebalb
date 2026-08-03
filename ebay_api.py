@@ -127,6 +127,9 @@ def create_inventory_location(access_token, location_key, name, address_line1, c
     }
     resp = requests.post(url, json=payload, headers=_headers(access_token), timeout=20)
     if resp.status_code not in (200, 201, 204):
+        # errorId 25803: the location already exists under this key - that's fine, it's usable.
+        if resp.status_code == 400 and "25803" in resp.text:
+            return True
         raise EbayAPIError(f"Creating location '{location_key}' failed", resp.status_code, resp.text)
     return True
 
@@ -149,6 +152,22 @@ def _extract_duplicate_policy_id(payload_text):
     except Exception:
         return None
     return None
+
+
+def opt_in_to_business_policies(access_token):
+    """
+    POST /sell/account/v1/program/opt_in
+    Sandbox (and some new production) accounts must opt in to the Business Policies
+    program before fulfillment/payment/return policies can be created at all.
+    Safe to call even if already opted in.
+    """
+    base = current_app.config["EBAY_API_BASE"]
+    url = f"{base}/sell/account/v1/program/opt_in"
+    payload = {"programType": "SELLING_POLICY_MANAGEMENT"}
+    resp = requests.post(url, json=payload, headers=_headers(access_token), timeout=20)
+    if resp.status_code not in (200, 204):
+        raise EbayAPIError("Opting in to business policies failed", resp.status_code, resp.text)
+    return True
 
 
 def create_fulfillment_policy(access_token, name, shipping_service="USPSPriority",

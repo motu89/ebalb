@@ -104,6 +104,11 @@ def create_policies(account_id):
     try:
         access_token = ebay_api.get_fresh_access_token(account.refresh_token)
 
+        try:
+            ebay_api.opt_in_to_business_policies(access_token)
+        except ebay_api.EbayAPIError:
+            pass  # already opted in, or opt-in not needed on this account - safe to continue
+
         account.fulfillment_policy_id = ebay_api.create_fulfillment_policy(
             access_token, name=f"{account.nickname} Shipping Policy"
         )
