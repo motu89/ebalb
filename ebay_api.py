@@ -375,7 +375,7 @@ def update_offer(access_token, offer_id, sku, product, category_id, policies, me
         "marketplaceId": marketplace_id,
         "format": "FIXED_PRICE",
         "availableQuantity": product.quantity,
-        "categoryId": category_id or product.category_id,
+        "categoryId": product.category_id or category_id,
         "listingDescription": product.description or product.title,
         "pricingSummary": {
             "price": {"value": f"{product.price:.2f}", "currency": "USD"}
@@ -404,7 +404,7 @@ def create_offer(access_token, sku, product, category_id, policies, merchant_loc
         "marketplaceId": marketplace_id,
         "format": "FIXED_PRICE",
         "availableQuantity": product.quantity,
-        "categoryId": category_id or product.category_id,
+        "categoryId": product.category_id or category_id,
         "listingDescription": product.description or product.title,
         "pricingSummary": {
             "price": {"value": f"{product.price:.2f}", "currency": "USD"}
