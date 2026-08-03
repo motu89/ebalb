@@ -45,6 +45,13 @@
         <div>Return policy: <span class="mono">{{ account.return_policy_id or 'none found' }}</span></div>
       </div>
 
+      <form method="POST" action="{{ url_for('accounts.create_policies', account_id=account.id) }}" style="margin-top:10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-secondary" style="width:100%;">
+          {{ 'Recreate' if account.fulfillment_policy_id else 'Create' }} working business policies
+        </button>
+      </form>
+
       {% if account.merchant_location_key %}
       <div style="margin-top:14px; font-size:12.5px;" class="text-muted">
         Ship-from location: <span class="mono">{{ account.merchant_location_key }}</span> ✓

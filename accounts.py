@@ -90,6 +90,38 @@ def disconnect(account_id):
     return redirect(url_for("accounts.list_accounts"))
 
 
+@accounts_bp.route("/<int:account_id>/create_policies", methods=["POST"])
+@login_required
+def create_policies(account_id):
+    """One-click creation of working payment/fulfillment/return policies -
+    fixes errorId 25007/25008/25009 caused by missing or broken sandbox defaults."""
+    account = EbayAccount.query.get_or_404(account_id)
+
+    if not account.is_connected:
+        flash("Connect this store to eBay before creating policies.", "error")
+        return redirect(url_for("accounts.list_accounts"))
+
+    try:
+        access_token = ebay_api.get_fresh_access_token(account.refresh_token)
+
+        account.fulfillment_policy_id = ebay_api.create_fulfillment_policy(
+            access_token, name=f"{account.nickname} Shipping Policy"
+        )
+        account.payment_policy_id = ebay_api.create_payment_policy(
+            access_token, name=f"{account.nickname} Payment Policy"
+        )
+        account.return_policy_id = ebay_api.create_return_policy(
+            access_token, name=f"{account.nickname} Return Policy"
+        )
+    except ebay_api.EbayAPIError as e:
+        flash(f"Creating policies failed: {e.payload or e}", "error")
+        return redirect(url_for("accounts.list_accounts"))
+
+    db.session.commit()
+    flash(f'New working business policies created for "{account.nickname}".', "success")
+    return redirect(url_for("accounts.list_accounts"))
+
+
 @accounts_bp.route("/<int:account_id>/location", methods=["POST"])
 @login_required
 def set_location(account_id):

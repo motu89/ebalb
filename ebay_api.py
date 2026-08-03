@@ -131,6 +131,76 @@ def create_inventory_location(access_token, location_key, name, address_line1, c
     return True
 
 
+def create_fulfillment_policy(access_token, name, shipping_service="USPSPriority",
+                                handling_time_days=1, marketplace_id="EBAY_US"):
+    """
+    POST /sell/account/v1/fulfillment_policy
+    Creates a shipping policy with at least one valid shipping service - the missing
+    piece behind errorId 25007 ("invalid data in the associated Fulfillment policy").
+    """
+    base = current_app.config["EBAY_API_BASE"]
+    url = f"{base}/sell/account/v1/fulfillment_policy"
+    payload = {
+        "name": name,
+        "marketplaceId": marketplace_id,
+        "categoryTypes": [{"name": "ALL_EXCLUDING_MOTORS_VEHICLES"}],
+        "handlingTime": {"value": handling_time_days, "unit": "DAY"},
+        "shippingOptions": [
+            {
+                "optionType": "DOMESTIC",
+                "costType": "FLAT_RATE",
+                "shippingServices": [
+                    {
+                        "sortOrder": 1,
+                        "shippingServiceCode": shipping_service,
+                        "shippingCost": {"value": "0.00", "currency": "USD"},
+                        "freeShipping": True,
+                    }
+                ],
+            }
+        ],
+    }
+    resp = requests.post(url, json=payload, headers=_headers(access_token), timeout=20)
+    if resp.status_code not in (200, 201):
+        raise EbayAPIError("Creating fulfillment policy failed", resp.status_code, resp.text)
+    return resp.json().get("fulfillmentPolicyId")
+
+
+def create_payment_policy(access_token, name, marketplace_id="EBAY_US"):
+    """POST /sell/account/v1/payment_policy - modern eBay marketplaces use immediate payment via eBay's system."""
+    base = current_app.config["EBAY_API_BASE"]
+    url = f"{base}/sell/account/v1/payment_policy"
+    payload = {
+        "name": name,
+        "marketplaceId": marketplace_id,
+        "categoryTypes": [{"name": "ALL_EXCLUDING_MOTORS_VEHICLES"}],
+        "immediatePay": False,
+    }
+    resp = requests.post(url, json=payload, headers=_headers(access_token), timeout=20)
+    if resp.status_code not in (200, 201):
+        raise EbayAPIError("Creating payment policy failed", resp.status_code, resp.text)
+    return resp.json().get("paymentPolicyId")
+
+
+def create_return_policy(access_token, name, return_days=30, marketplace_id="EBAY_US"):
+    """POST /sell/account/v1/return_policy"""
+    base = current_app.config["EBAY_API_BASE"]
+    url = f"{base}/sell/account/v1/return_policy"
+    payload = {
+        "name": name,
+        "marketplaceId": marketplace_id,
+        "categoryTypes": [{"name": "ALL_EXCLUDING_MOTORS_VEHICLES"}],
+        "returnsAccepted": True,
+        "returnPeriod": {"value": return_days, "unit": "DAY"},
+        "returnShippingCostPayer": "SELLER",
+        "refundMethod": "MONEY_BACK",
+    }
+    resp = requests.post(url, json=payload, headers=_headers(access_token), timeout=20)
+    if resp.status_code not in (200, 201):
+        raise EbayAPIError("Creating return policy failed", resp.status_code, resp.text)
+    return resp.json().get("returnPolicyId")
+
+
 def get_business_policies(access_token, marketplace_id="EBAY_US"):
     """Fetch payment / fulfillment / return policy IDs already configured on the seller's account."""
     base = current_app.config["EBAY_API_BASE"]
