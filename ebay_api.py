@@ -102,6 +102,16 @@ def _headers(access_token, content_language="en-US"):
     }
 
 
+def get_inventory_location(access_token, location_key):
+    """GET /sell/inventory/v1/location/{merchantLocationKey} - raw location detail, used for diagnostics."""
+    base = current_app.config["EBAY_API_BASE"]
+    url = f"{base}/sell/inventory/v1/location/{location_key}"
+    resp = requests.get(url, headers=_headers(access_token), timeout=20)
+    if resp.status_code != 200:
+        raise EbayAPIError("Fetching location failed", resp.status_code, resp.text)
+    return resp.json()
+
+
 def create_inventory_location(access_token, location_key, name, address_line1, city,
                                 state_or_province, postal_code, country="US"):
     """
@@ -329,6 +339,17 @@ def create_or_update_inventory_item(access_token, sku, product):
     if resp.status_code not in (200, 201, 204):
         raise EbayAPIError(f"Inventory item creation failed for {sku}", resp.status_code, resp.text)
     return True
+
+
+def get_offer_detail_by_sku(access_token, sku, marketplace_id="EBAY_US"):
+    """GET /sell/inventory/v1/offer?sku=... - full offer object (not just the ID), for diagnostics."""
+    base = current_app.config["EBAY_API_BASE"]
+    url = f"{base}/sell/inventory/v1/offer?sku={sku}&marketplace_id={marketplace_id}"
+    resp = requests.get(url, headers=_headers(access_token), timeout=20)
+    if resp.status_code != 200:
+        raise EbayAPIError("Fetching offer failed", resp.status_code, resp.text)
+    offers = resp.json().get("offers", [])
+    return offers[0] if offers else None
 
 
 def get_offer_by_sku(access_token, sku, marketplace_id="EBAY_US"):

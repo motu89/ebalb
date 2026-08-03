@@ -21,10 +21,10 @@ def list_accounts():
 def debug_shipping(account_id):
     """
     Diagnostic page for errorId 25007/25008/25009: shows the shipping service
-    code(s) actually configured on this account's fulfillment policy, and
-    cross-checks each one against eBay's current list of valid codes for the
-    marketplace (validForSellingFlow). Visit this URL directly in the browser
-    while logged in, e.g. /accounts/1/debug_shipping
+    code(s) configured on this account's fulfillment policy (cross-checked against
+    eBay's current valid list), the merchant location eBay has on file, and - if a
+    SKU is passed via ?sku=... - the actual offer eBay is holding for it. Visit
+    e.g. /accounts/1/debug_shipping?sku=1-SKU-1003
     """
     account = EbayAccount.query.get_or_404(account_id)
     if not account.is_connected:
@@ -36,6 +36,15 @@ def debug_shipping(account_id):
         access_token = ebay_api.get_fresh_access_token(account.refresh_token)
         policy = ebay_api.get_fulfillment_policy(access_token, account.fulfillment_policy_id)
         valid_services = ebay_api.get_valid_shipping_services(access_token)
+
+        location = None
+        if account.merchant_location_key:
+            location = ebay_api.get_inventory_location(access_token, account.merchant_location_key)
+
+        offer = None
+        sku = request.args.get("sku")
+        if sku:
+            offer = ebay_api.get_offer_detail_by_sku(access_token, sku)
     except ebay_api.EbayAPIError as e:
         return jsonify({"error": str(e), "detail": e.payload}), 502
 
@@ -47,6 +56,7 @@ def debug_shipping(account_id):
             code = svc.get("shippingServiceCode")
             configured_codes.append({
                 "shippingServiceCode": code,
+                "shippingCarrierCode": svc.get("shippingCarrierCode"),
                 "optionType": option.get("optionType"),
                 "is_currently_valid": valid_codes.get(code, "UNKNOWN - not in eBay's current list"),
             })
@@ -56,6 +66,10 @@ def debug_shipping(account_id):
         "policy_name": policy.get("name"),
         "configured_shipping_services": configured_codes,
         "raw_policy": policy,
+        "merchant_location_key": account.merchant_location_key,
+        "location": location,
+        "offer_for_sku": offer,
+        "note": None if sku else "Pass ?sku=<accountId>-<productSku> (e.g. ?sku=1-SKU-1003) to also inspect the actual offer eBay has stored.",
     })
 
 
