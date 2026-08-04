@@ -351,7 +351,10 @@ def create_or_update_inventory_item(access_token, sku, product):
     base = current_app.config["EBAY_API_BASE"]
     url = f"{base}/sell/inventory/v1/inventory_item/{sku}"
 
-    image_urls = [product.image_url] if product.image_url else []
+    # eBay accepts up to 12 image URLs per listing — get_image_urls() already
+    # caps at 12, but we cap again here defensively in case a product was
+    # created/edited some other way than the CSV importer.
+    image_urls = product.get_image_urls()[:12]
     aspects = {}
     if product.brand:
         aspects["Brand"] = [product.brand]

@@ -11,6 +11,34 @@ REQUIRED_COLUMNS = {"sku", "title", "price"}
 OPTIONAL_COLUMNS = ["description", "quantity", "category_id", "brand", "condition", "image_url"]
 
 
+def parse_image_urls(raw):
+    """
+    Turns one CSV cell into a clean list of image URLs.
+    Accepts multiple URLs separated by "|" (preferred) or "," (also fine).
+    Silently drops anything that isn't a real http(s) link.
+    Caps at 12 (eBay's limit) — returns (urls, how_many_were_dropped_for_being_over_12).
+    """
+    if not raw or not str(raw).strip():
+        return [], 0
+
+    raw = str(raw).strip()
+    parts = raw.split("|") if "|" in raw else raw.split(",")
+
+    seen = set()
+    urls = []
+    for p in parts:
+        p = p.strip()
+        if not p or p in seen:
+            continue
+        if not (p.startswith("http://") or p.startswith("https://")):
+            continue
+        seen.add(p)
+        urls.append(p)
+
+    overflow = max(0, len(urls) - 12)
+    return urls[:12], overflow
+
+
 @products_bp.route("/")
 @login_required
 def list_products():
@@ -47,12 +75,19 @@ def upload():
 
     added = 0
     skipped = 0
+    rows_with_overflow = 0
     for _, row in df.iterrows():
         sku = str(row.get("sku", "")).strip()
         title = str(row.get("title", "")).strip()
         if not sku or not title or pd.isna(row.get("price")):
             skipped += 1
             continue
+
+        image_urls, overflow = parse_image_urls(
+            row.get("image_url") if "image_url" in df.columns and not pd.isna(row.get("image_url")) else None
+        )
+        if overflow:
+            rows_with_overflow += 1
 
         product = Product(
             sku=sku,
@@ -63,14 +98,18 @@ def upload():
             category_id=str(row["category_id"]) if "category_id" in df.columns and not pd.isna(row.get("category_id")) else None,
             brand=str(row["brand"]) if "brand" in df.columns and not pd.isna(row.get("brand")) else None,
             condition=str(row["condition"]).upper() if "condition" in df.columns and not pd.isna(row.get("condition")) else "NEW",
-            image_url=str(row["image_url"]) if "image_url" in df.columns and not pd.isna(row.get("image_url")) else None,
         )
+        product.set_image_urls(image_urls)
         db.session.add(product)
         added += 1
 
     db.session.commit()
-    flash(f"Imported {added} product(s)." + (f" Skipped {skipped} row(s) missing required data." if skipped else ""),
-          "success")
+    msg = f"Imported {added} product(s)."
+    if skipped:
+        msg += f" Skipped {skipped} row(s) missing required data."
+    if rows_with_overflow:
+        msg += f" {rows_with_overflow} row(s) had more than 12 image URLs — extras were dropped (eBay's limit is 12)."
+    flash(msg, "success")
     return redirect(url_for("products.list_products"))
 
 

@@ -13,7 +13,7 @@
   {% if products %}
   <table>
     <thead>
-      <tr><th>SKU</th><th>Title</th><th>Price</th><th>Qty</th><th>Brand</th><th></th></tr>
+      <tr><th>SKU</th><th>Title</th><th>Price</th><th>Qty</th><th>Brand</th><th>Images</th><th></th></tr>
     </thead>
     <tbody>
       {% for p in products %}
@@ -23,6 +23,7 @@
         <td>${{ "%.2f"|format(p.price) }}</td>
         <td>{{ p.quantity }}</td>
         <td class="text-muted">{{ p.brand or '—' }}</td>
+        <td class="text-muted">{{ p.image_count }}{% if p.image_count > 0 %} / 12{% endif %}</td>
         <td>
           <form method="POST" action="{{ url_for('products.delete', product_id=p.id) }}"
                 data-confirm="Remove this product?">
