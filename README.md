@@ -1,57 +1,46 @@
-# Listing Pipeline — eBay Auto-Listing Bot
+# Listing Pipeline - eBay Auto-Listing Bot
 
-A Flask app that connects to eBay's official Sell APIs (Inventory API) to bulk-publish
-listings from a CSV/Excel file, across as many connected eBay accounts as you need.
+A Flask app that connects to eBay's official Sell APIs to bulk-publish listings
+from a CSV/Excel file across connected eBay seller accounts.
 
-## What's included
-- Dashboard login (your own username/password, separate from eBay)
-- "Stores" page — connect eBay seller accounts via OAuth once, refresh tokens stored encrypted
-- CSV/Excel upload for bulk product import
-- Publish flow — pick a store + products, publishes via the Inventory API (item → offer → publish)
-- Listings log — every publish attempt with status and error detail
-- eBay Marketplace Account Deletion webhook, ready for when you move to production
-
-## 1. Install
+## Install
 
 ```bash
 cd ebay_bot
 pip install -r requirements.txt
 ```
 
-## 2. Configure `.env`
+## Configure `.env`
 
-A `.env` file is already set up with your **Sandbox** App ID, Dev ID, and Cert ID.
-Two things you still need to fill in before connecting a store:
+Set your Flask and eBay values in `.env`.
 
-### a) Set a RuName (redirect URL)
-1. Go to developer.ebay.com → Application Keys → your Sandbox keyset → click **User Tokens**
-2. Under "Your eBay Redirect URL (RuName)", either use an existing one or create a new one
-   - For local testing, point it at `http://localhost:5000/accounts/callback`
-     (eBay sandbox does allow `localhost` redirects for testing — production will need a real HTTPS domain, e.g. your Railway URL, later)
-3. Copy the **RuName value** (looks like `Your_Name-YourApp-SBX-abc123`) into `.env`:
-   ```
-   EBAY_RUNAME=Your_Name-YourApp-SBX-abc123
-   ```
+For local testing, your eBay RuName redirect can point to:
 
-### b) Change the default admin password and secret key
-Open `.env` and replace:
-```
-SECRET_KEY=... (any long random string)
-ADMIN_PASSWORD=... (whatever you want to log into the dashboard with)
+```text
+http://localhost:5000/accounts/callback
 ```
 
-## 3. Run it
+Change these before any real deployment:
+
+```text
+SECRET_KEY=your-long-random-secret
+ADMIN_PASSWORD=your-admin-password
+TOKEN_ENCRYPTION_KEY=your-fernet-key
+```
+
+## Run
 
 ```bash
 python run.py
 ```
 
-Visit `http://localhost:5000`, log in with your `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env`.
+Open:
 
-## Super admin setup
+```text
+http://localhost:5000
+```
 
-The super admin is separate from normal admin users. It can create admin logins, choose
-their use period, reset their passwords, extend their access, and expire them.
+## Super Admin
 
 Create the first super admin once:
 
@@ -59,86 +48,70 @@ Create the first super admin once:
 python -m flask --app app create-super-admin
 ```
 
-The command prints a random 16-character username and a random 16-character password.
-Save them immediately because the password is stored only as a hash.
+The command prints a random 16-character username and a random 16-character
+password. Save them immediately because the password is stored only as a hash.
 
-You can also provide your own username, while still getting a random password:
-
-```bash
-python -m flask --app app create-super-admin --username owner
-```
-
-After signing in as the super admin, open the secret super admin URL:
+This local copy already has this super-admin login in `instance/ebaybot.db`:
 
 ```text
-http://localhost:5000/<SUPER_ADMIN_ROUTE_KEY>/users
+Username: Z6vcpovQPSrAf3Cs
+Password: hyTtKLpgpUXjsy8b
 ```
 
-For this local copy, the URL is:
+The secret super-admin URL is:
 
 ```text
 http://localhost:5000/qOZKWRDXX2gsdW2p/users
 ```
 
-Create an admin account, choose the period of use, and give that generated
-username/password to the admin. Expired admin users cannot log in.
+The route key is set in `.env`:
 
-If you ever lose the super admin password, rotate it with:
+```text
+SUPER_ADMIN_ROUTE_KEY=qOZKWRDXX2gsdW2p
+```
+
+From that page, create admin accounts, choose their use period, reset their
+passwords, extend their access, or expire them. Expired admins cannot log in.
+
+If you lose the super-admin password, rotate it with:
 
 ```bash
 python -m flask --app app reset-super-admin-password <super_admin_username>
 ```
 
-## 4. Connect a sandbox store
-1. Go to **Stores** → add a store (give it any nickname)
-2. Click **Connect to eBay (sandbox)**
-3. Log in with your **Sandbox test user** (the `TESTUSER_...` account, not your real eBay login)
-4. You'll be redirected back, and the store will show "Connected" with its business policies auto-filled
-5. If policies show "none found," your sandbox test user needs payment/return/fulfillment
-   policies set up once in Seller Hub (sandbox) first — this is normal for a brand-new test user
+## Privacy Policy URL
 
-## 5. Set a ship-from location
-Each connected store needs a **merchant location key** before you can publish — this is a
-location you set up once via eBay's Account API (or Seller Hub in sandbox). Enter that key
-on the Stores page once you have it.
+The public privacy policy page is available at:
 
-## 6. Upload products and publish
-1. **Products → Upload CSV** — use `sample_products.csv` in this folder as a template
-2. **Publish** — pick the store, pick the products, hit Publish
-3. **Listings** — see status per item, with error detail if anything failed
-
-## Security notes (already built in)
-- Refresh tokens are encrypted at rest (Fernet) using `TOKEN_ENCRYPTION_KEY` — never stored in plain text
-- CSRF protection on every form (Flask-WTF)
-- Dashboard requires login — nothing is publicly viewable without your admin password
-- App ID / Cert ID / Dev ID live only in `.env`, which is not meant to be committed to git or shared
-
-**Before you deploy this anywhere public:** change `SECRET_KEY`, `ADMIN_PASSWORD`, and
-generate a fresh `TOKEN_ENCRYPTION_KEY` — don't reuse the ones in this starter `.env`.
-
-## Moving to production later
-1. Create a **Production** keyset on the developer portal
-2. Complete the **Marketplace Account Deletion** step — this app's webhook is already built at
-   `/webhook/ebay-account-deletion`; you just need it reachable over HTTPS (Railway gives you this)
-   and to set a matching `VERIFICATION_TOKEN` in `webhook.py`
-3. Swap `.env`: `EBAY_ENV=production`, plus your production App ID / Dev ID / Cert ID / RuName
-4. Re-authorize each store — sandbox and production tokens are separate
-
-## Project structure
+```text
+http://localhost:5000/privacy
 ```
-ebay_bot/
-├── app.py            # App factory, wires everything together
-├── config.py          # Reads .env
-├── extensions.py       # db, login manager, token encryption
-├── models.py           # AdminUser, EbayAccount, Product, Listing
-├── ebay_api.py          # All direct eBay API calls (OAuth + Inventory API)
-├── auth.py               # Dashboard login/logout
-├── main.py                # Dashboard/overview
-├── accounts.py             # Connect/manage eBay stores
-├── products.py              # CSV upload, product list
-├── listings.py               # Publish + listing status
-├── webhook.py                 # eBay account deletion notification (for production)
-├── templates/                  # All pages
-├── static/                      # CSS/JS
-└── sample_products.csv           # Example CSV format
+
+This URL is also shown on the super-admin users page. For eBay production API
+review, use the deployed HTTPS version of the same path, for example:
+
+```text
+https://your-domain.com/privacy
 ```
+
+## Connect a Sandbox Store
+
+1. Go to **Stores** and add a store nickname.
+2. Click **Connect to eBay (sandbox)**.
+3. Log in with your sandbox test user.
+4. Return to the app and confirm the store shows as connected.
+
+## Upload Products and Publish
+
+1. Open **Products** and upload a CSV/Excel file.
+2. Open **Publish**, choose the store and products.
+3. Open **Listings** to review success or failure details.
+
+## Security Notes
+
+- Dashboard passwords are hashed.
+- Normal admin users can expire.
+- Super-admin access uses a secret 16-character URL path plus login.
+- eBay refresh tokens are encrypted at rest with `TOKEN_ENCRYPTION_KEY`.
+- Forms use CSRF protection.
+- Public production deployments should use HTTPS.

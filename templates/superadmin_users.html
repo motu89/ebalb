@@ -8,6 +8,17 @@
   </div>
 </div>
 
+<div class="panel utility-panel" style="margin-bottom: 28px;">
+  <div class="panel-header">Production API links</div>
+  <div class="utility-row">
+    <div>
+      <div class="label">Privacy policy URL</div>
+      <div class="credential-value">{{ request.url_root.rstrip('/') }}{{ url_for('main.privacy') }}</div>
+    </div>
+    <a href="{{ url_for('main.privacy') }}" class="btn btn-secondary" target="_blank" rel="noopener">Open privacy page</a>
+  </div>
+</div>
+
 {% if generated_credentials %}
 <div class="panel credential-panel" style="margin-bottom: 28px;">
   <div class="panel-header">New credentials</div>

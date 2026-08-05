@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy - Listing Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<main class="privacy-page">
+  <section class="privacy-card">
+    <p class="mono text-muted">Last updated: August 5, 2026</p>
+    <h1>Privacy Policy</h1>
+    <p>
+      Listing Pipeline is an eBay listing management tool used to connect seller
+      accounts, import product data, and publish listings through eBay APIs.
+    </p>
+
+    <h2>Information We Collect</h2>
+    <p>
+      The app may store dashboard user accounts, connected eBay seller account
+      identifiers, encrypted eBay refresh tokens, product information uploaded by
+      an admin user, listing status, and error details returned by eBay APIs.
+    </p>
+
+    <h2>How We Use Information</h2>
+    <p>
+      Information is used only to authenticate dashboard users, connect seller
+      accounts, create or update eBay listings, show listing history, and maintain
+      the operation and security of the app.
+    </p>
+
+    <h2>eBay Account Access</h2>
+    <p>
+      eBay OAuth tokens are used only to call authorized eBay APIs for the connected
+      seller account. Refresh tokens are encrypted at rest and are not sold,
+      rented, or shared with third parties.
+    </p>
+
+    <h2>Data Sharing</h2>
+    <p>
+      The app sends listing and account data to eBay only when needed to perform
+      authorized listing actions. We do not sell personal information.
+    </p>
+
+    <h2>Data Retention</h2>
+    <p>
+      Data remains in the application database until an authorized admin removes
+      it or the application owner deletes it. Connected eBay accounts can be
+      disconnected from the dashboard.
+    </p>
+
+    <h2>Security</h2>
+    <p>
+      The app uses dashboard login protection, CSRF protection, password hashing,
+      role-based super-admin controls, and encrypted storage for eBay refresh
+      tokens.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+      For privacy questions or data removal requests, contact the owner/operator
+      of this Listing Pipeline deployment.
+    </p>
+  </section>
+</main>
+</body>
+</html>

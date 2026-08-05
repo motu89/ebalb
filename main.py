@@ -6,6 +6,11 @@ from models import EbayAccount, Product, Listing
 main_bp = Blueprint("main", __name__)
 
 
+@main_bp.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+
 @main_bp.route("/")
 @login_required
 def dashboard():
