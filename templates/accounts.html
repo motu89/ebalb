@@ -38,6 +38,12 @@
       <a href="{{ url_for('accounts.connect', account_id=account.id) }}" class="btn" style="margin-top:16px; width:100%;">
         Connect to eBay ({{ ebay_env }})
       </a>
+      <form method="POST" action="{{ url_for('accounts.delete_account', account_id=account.id) }}"
+            data-confirm="Delete &quot;{{ account.nickname }}&quot; permanently? Its imported products will be kept but unassigned from this store."
+            style="margin-top:10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger" style="width:100%;">Delete store</button>
+      </form>
     {% else %}
       <div style="margin-top:16px; font-size:12.5px;" class="text-muted">
         <div>Payment policy: <span class="mono">{{ account.payment_policy_id or 'none found' }}</span></div>
@@ -78,6 +84,13 @@
             style="margin-top:10px;">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-danger" style="width:100%;">Disconnect</button>
+      </form>
+
+      <form method="POST" action="{{ url_for('accounts.delete_account', account_id=account.id) }}"
+            data-confirm="Delete &quot;{{ account.nickname }}&quot; permanently, including its eBay connection? Its imported products will be kept but unassigned from this store."
+            style="margin-top:10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger" style="width:100%;">Delete store</button>
       </form>
     {% endif %}
   </div>

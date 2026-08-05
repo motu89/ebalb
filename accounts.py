@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from flask_login import login_required
 
 from extensions import db
-from models import EbayAccount
+from models import EbayAccount, Listing
 import ebay_api
 
 accounts_bp = Blueprint("accounts", __name__, url_prefix="/accounts")
@@ -171,6 +171,28 @@ def disconnect(account_id):
     account.is_active = False
     db.session.commit()
     flash(f'"{account.nickname}" disconnected.', "success")
+    return redirect(url_for("accounts.list_accounts"))
+
+
+@accounts_bp.route("/<int:account_id>/delete", methods=["POST"])
+@login_required
+def delete_account(account_id):
+    """Permanently removes the store row itself (not just the eBay token), so a
+    fresh store with a new nickname can be added and connected in its place.
+    Products imported for this store are kept but unassigned (account_id=None),
+    matching the same rule already used elsewhere for disconnect/products.
+    Listing (publish-attempt) history tied to this account is removed since it
+    can't be unassigned - account_id is required on that table."""
+    account = EbayAccount.query.get_or_404(account_id)
+
+    Listing.query.filter_by(account_id=account.id).delete()
+    for product in account.products:
+        product.account_id = None
+
+    nickname = account.nickname
+    db.session.delete(account)
+    db.session.commit()
+    flash(f'"{nickname}" was removed. Its products were kept but unassigned.', "success")
     return redirect(url_for("accounts.list_accounts"))
 
 

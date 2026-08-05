@@ -35,6 +35,7 @@ def build_consent_url(scopes=None):
         f"&redirect_uri={runame}"
         f"&response_type=code"
         f"&scope={scope_param}"
+        f"&prompt=login"
     )
 
 
