@@ -9,14 +9,40 @@
 </div>
 
 <div class="form-card">
+  {% if not accounts %}
+  <div class="empty-state">No connected stores yet. <a href="{{ url_for('accounts.list_accounts') }}" style="color:var(--accent);">Connect one</a> first — every CSV upload belongs to a specific store, so its product data stays separate from your other stores.</div>
+  {% else %}
   <form method="POST" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="account_id">Store</label>
+    <select id="account_id" name="account_id" required>
+      <option value="" disabled selected>Choose which store this file is for…</option>
+      {% for a in accounts %}
+        <option value="{{ a.id }}">{{ a.nickname }}{{ '' if a.is_connected else ' — not connected yet' }}</option>
+      {% endfor %}
+    </select>
     <label for="csv_file">CSV or Excel file</label>
     <input type="file" id="csv_file" name="csv_file" accept=".csv,.xlsx,.xls" required>
     <div class="btn-row">
       <button type="submit" class="btn">Import</button>
     </div>
   </form>
+  {% endif %}
+</div>
+
+<div class="panel" style="margin-top:24px; padding:16px;">
+  <strong>Every store's products are kept separate.</strong>
+  <p class="text-muted" style="font-size:13px; margin-top:6px;">
+    The file you upload only affects the store you pick above — it can't see or touch another store's products. Re-uploading the same SKU <em>for that same store</em> updates that product instead of duplicating it; the same SKU uploaded to a different store creates a separate product, since two stores are allowed to reuse a SKU for different things.
+  </p>
+</div>
+
+<div class="panel" style="margin-top:24px; padding:16px;">
+  <strong>Re-uploading the same SKU updates that product instead of duplicating it.</strong>
+  <p class="text-muted" style="font-size:13px; margin-top:6px;">
+    A column left out of the file entirely is untouched on existing products (e.g. re-uploading just <code>sku,title,price</code> to bump prices won't clear anyone's images or category). A column that's present but blank for a row clears that field.
+    The <code>aspects</code>/<code>color</code> columns are the one exception - new values are merged into whatever specifics a product already has, so they never get wiped out by a file that doesn't mention them.
+  </p>
 </div>
 
 <div class="panel" style="margin-top:24px;">
@@ -33,6 +59,13 @@
       <tr><td class="mono">brand</td><td>No</td><td>Used as the Brand aspect</td></tr>
       <tr><td class="mono">condition</td><td>No</td><td>NEW, USED, etc. Defaults to NEW</td></tr>
       <tr><td class="mono">image_url</td><td>No</td><td>One or more public, direct image links. For multiple images, separate them with <code>|</code> (or a comma) in the same cell — up to 12, eBay's limit. Extra ones beyond 12 are dropped automatically.</td></tr>
+      <tr><td class="mono">color</td><td>No</td><td>Shorthand for a single Color aspect (e.g. <code>Black</code>). Ignored if you already set Color in the <code>aspects</code> column below.</td></tr>
+      <tr><td class="mono">aspects</td><td>No</td><td>
+        Any other category-specific details eBay's item specifics ask for (Size, Material, Department, etc.) — most categories require a few of these to publish.<br>
+        Format: <code>Key:Value|Key:Value</code>, e.g. <code>Size:Large|Material:Cotton</code>.
+        Multiple values for one key: <code>Size:Large,XL</code>.<br>
+        Before publishing, the app checks the product's category against eBay's actual requirements and will tell you exactly which required specifics are still missing, if any.
+      </td></tr>
     </tbody>
   </table>
 </div>

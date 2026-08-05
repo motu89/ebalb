@@ -1,4 +1,4 @@
-sku,title,price,description,quantity,category_id,brand,color,condition,image_url
-SKU-1002,Wireless Bluetooth Earbuds,24.99,Compact wireless earbuds with charging case,10,14111,SoundCore,Grey,NEW,https://example.com/images/earbuds-1.jpg|https://example.com/images/earbuds-2.jpg|https://example.com/images/earbuds-3.jpg
-SKU-1003,Stainless Steel Water Bottle,14.5,Insulated 32oz water bottle keeps drinks cold 24h,25,14111,HydroFlow,White,NEW,https://example.com/images/bottle.jpg
-SKU-1004,Yoga Mat Non-Slip,19.99,6mm thick non-slip exercise yoga mat,15,14111,FlexFit,Black,NEW,https://example.com/images/mat.jpg
+sku,title,price,description,quantity,category_id,brand,color,condition,image_url,aspects
+SKU-1002,Wireless Bluetooth Earbuds,24.99,Compact wireless earbuds with charging case,10,14111,SoundCore,Grey,NEW,https://example.com/images/earbuds-1.jpg|https://example.com/images/earbuds-2.jpg|https://example.com/images/earbuds-3.jpg,Color:Grey|Battery Life:6 hours
+SKU-1003,Stainless Steel Water Bottle,14.5,Insulated 32oz water bottle keeps drinks cold 24h,25,14111,HydroFlow,White,NEW,https://example.com/images/bottle.jpg,Color:White|Capacity:32 oz
+SKU-1004,Yoga Mat Non-Slip,19.99,6mm thick non-slip exercise yoga mat,15,14111,FlexFit,Black,NEW,https://example.com/images/mat.jpg,"Color:Black|Size:Standard,Large|Material:PVC"

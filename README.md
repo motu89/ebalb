@@ -48,6 +48,47 @@ python run.py
 
 Visit `http://localhost:5000`, log in with your `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env`.
 
+## Super admin setup
+
+The super admin is separate from normal admin users. It can create admin logins, choose
+their use period, reset their passwords, extend their access, and expire them.
+
+Create the first super admin once:
+
+```bash
+python -m flask --app app create-super-admin
+```
+
+The command prints a random 16-character username and a random 16-character password.
+Save them immediately because the password is stored only as a hash.
+
+You can also provide your own username, while still getting a random password:
+
+```bash
+python -m flask --app app create-super-admin --username owner
+```
+
+After signing in as the super admin, open the secret super admin URL:
+
+```text
+http://localhost:5000/<SUPER_ADMIN_ROUTE_KEY>/users
+```
+
+For this local copy, the URL is:
+
+```text
+http://localhost:5000/qOZKWRDXX2gsdW2p/users
+```
+
+Create an admin account, choose the period of use, and give that generated
+username/password to the admin. Expired admin users cannot log in.
+
+If you ever lose the super admin password, rotate it with:
+
+```bash
+python -m flask --app app reset-super-admin-password <super_admin_username>
+```
+
 ## 4. Connect a sandbox store
 1. Go to **Stores** → add a store (give it any nickname)
 2. Click **Connect to eBay (sandbox)**

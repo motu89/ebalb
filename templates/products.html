@@ -9,34 +9,59 @@
   <a href="{{ url_for('products.upload') }}" class="btn">Upload CSV</a>
 </div>
 
+<div class="form-card" style="margin-bottom:20px; max-width: 360px;">
+  <form method="GET">
+    <label for="account_filter">Store</label>
+    <select id="account_filter" name="account_id" onchange="this.form.submit()">
+      <option value="" {{ 'selected' if not account_filter }}>All stores</option>
+      <option value="unassigned" {{ 'selected' if account_filter == 'unassigned' }}>Unassigned (uploaded before store separation)</option>
+      {% for a in accounts %}
+        <option value="{{ a.id }}" {{ 'selected' if account_filter == a.id|string }}>{{ a.nickname }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
 <div class="panel">
   {% if products %}
+  <form method="POST" action="{{ url_for('products.bulk_delete') }}" data-confirm="Remove all selected products? This can't be undone.">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="btn-row" style="margin-bottom:12px;">
+      <button type="button" class="btn" style="padding:5px 10px; font-size:12px;" onclick="document.querySelectorAll('.product-check').forEach(c => c.checked = true)">Select all</button>
+      <button type="button" class="btn" style="padding:5px 10px; font-size:12px;" onclick="document.querySelectorAll('.product-check').forEach(c => c.checked = false)">Select none</button>
+      <button type="submit" class="btn btn-danger" style="padding:5px 10px; font-size:12px;">Delete selected</button>
+    </div>
   <table>
     <thead>
-      <tr><th>SKU</th><th>Title</th><th>Price</th><th>Qty</th><th>Brand</th><th>Images</th><th></th></tr>
+      <tr><th></th><th>SKU</th><th>Title</th><th>Store</th><th>Price</th><th>Qty</th><th>Brand</th><th>Images</th><th></th></tr>
     </thead>
     <tbody>
       {% for p in products %}
       <tr>
+        <td><input type="checkbox" class="product-check" name="product_ids" value="{{ p.id }}"></td>
         <td class="mono">{{ p.sku }}</td>
         <td>{{ p.title }}</td>
+        <td class="text-muted">{{ p.account.nickname if p.account else '— unassigned' }}</td>
         <td>${{ "%.2f"|format(p.price) }}</td>
         <td>{{ p.quantity }}</td>
         <td class="text-muted">{{ p.brand or '—' }}</td>
         <td class="text-muted">{{ p.image_count }}{% if p.image_count > 0 %} / 12{% endif %}</td>
         <td>
-          <form method="POST" action="{{ url_for('products.delete', product_id=p.id) }}"
-                data-confirm="Remove this product?">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-danger" style="padding:5px 10px; font-size:12px;">Remove</button>
-          </form>
+          <button type="submit" form="delete-{{ p.id }}" class="btn btn-danger" style="padding:5px 10px; font-size:12px;">Remove</button>
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  </form>
+  {% for p in products %}
+  <form id="delete-{{ p.id }}" method="POST" action="{{ url_for('products.delete', product_id=p.id) }}"
+        data-confirm="Remove this product?" style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  </form>
+  {% endfor %}
   {% else %}
-  <div class="empty-state">No products yet. <a href="{{ url_for('products.upload') }}" style="color:var(--accent);">Upload a CSV</a> to get started.</div>
+  <div class="empty-state">No products for this filter yet. <a href="{{ url_for('products.upload') }}" style="color:var(--accent);">Upload a CSV</a> to get started.</div>
   {% endif %}
 </div>
 {% endblock %}

@@ -4,34 +4,49 @@
 <div class="page-header">
   <div>
     <h1>Publish listings</h1>
-    <p>Pick a store and the products to send live.</p>
+    <p>Pick a store, then only that store's own products show up to publish.</p>
   </div>
 </div>
 
 {% if not accounts %}
 <div class="empty-state">No connected stores yet. <a href="{{ url_for('accounts.list_accounts') }}" style="color:var(--accent);">Connect one</a> first.</div>
+{% else %}
+
+<div class="form-card" style="margin-bottom:20px; max-width: 420px;">
+  <form method="GET">
+    <label for="account_id_picker">Store</label>
+    <select id="account_id_picker" name="account_id" onchange="this.form.submit()">
+      <option value="" {{ 'selected' if not selected_account_id }} disabled>Choose a store…</option>
+      {% for a in accounts %}
+        <option value="{{ a.id }}" {{ 'selected' if selected_account_id == a.id|string }}>
+          {{ a.nickname }}{{ '' if a.is_connected else ' — not connected' }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+{% if not selected_account_id %}
+<div class="empty-state">Pick a store above to see its products.</div>
 {% elif not products %}
-<div class="empty-state">No products yet. <a href="{{ url_for('products.upload') }}" style="color:var(--accent);">Upload a CSV</a> first.</div>
+<div class="empty-state">This store has no products yet. <a href="{{ url_for('products.upload') }}" style="color:var(--accent);">Upload a CSV</a> for it first.</div>
 {% else %}
 <form method="POST" class="form-card" style="max-width: 640px;">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <label for="account_id">Store</label>
-  <select id="account_id" name="account_id" required>
-    {% for a in accounts %}
-      <option value="{{ a.id }}" {{ 'disabled' if not a.is_connected }}>
-        {{ a.nickname }}{{ '' if a.is_connected else ' — not connected' }}
-      </option>
-    {% endfor %}
-  </select>
+  <input type="hidden" name="account_id" value="{{ selected_account_id }}">
 
   <label for="category_id">Fallback eBay category ID (used only if a product has no category_id set)</label>
   <input type="text" id="category_id" name="category_id" value="9355" placeholder="e.g. 9355">
 
   <label>Products</label>
+  <div class="btn-row" style="margin: 6px 0;">
+    <button type="button" class="btn" style="padding:5px 10px; font-size:12px;" onclick="document.querySelectorAll('.publish-check').forEach(c => c.checked = true)">Select all</button>
+    <button type="button" class="btn" style="padding:5px 10px; font-size:12px;" onclick="document.querySelectorAll('.publish-check').forEach(c => c.checked = false)">Select none</button>
+  </div>
   <div class="checkbox-list">
     {% for p in products %}
     <div class="checkbox-row">
-      <input type="checkbox" name="product_ids" value="{{ p.id }}" id="prod-{{ p.id }}">
+      <input type="checkbox" class="publish-check" name="product_ids" value="{{ p.id }}" id="prod-{{ p.id }}">
       <label for="prod-{{ p.id }}" style="margin:0; color: var(--text); font-size: 13.5px;">
         {{ p.title }} <span class="mono text-muted">${{ "%.2f"|format(p.price) }}</span>
       </label>
@@ -43,5 +58,6 @@
     <button type="submit" class="btn">Publish selected</button>
   </div>
 </form>
+{% endif %}
 {% endif %}
 {% endblock %}

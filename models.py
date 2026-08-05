@@ -1,20 +1,39 @@
 from datetime import datetime
+import json
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import db, TokenCipher
 
 
 class AdminUser(UserMixin, db.Model):
-    """The single dashboard login (not an eBay account)."""
+    """Dashboard login user (not an eBay account)."""
+
+    ROLE_ADMIN = "admin"
+    ROLE_SUPER_ADMIN = "super_admin"
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default=ROLE_ADMIN)
+    expires_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, raw_password):
         self.password_hash = generate_password_hash(raw_password)
 
     def check_password(self, raw_password):
         return check_password_hash(self.password_hash, raw_password)
+
+    @property
+    def is_super_admin(self):
+        return self.role == self.ROLE_SUPER_ADMIN
+
+    def has_valid_period(self):
+        return self.is_super_admin or self.expires_at is None or self.expires_at >= datetime.utcnow()
+
+    @property
+    def is_active(self):
+        return self.has_valid_period()
 
 
 class EbayAccount(db.Model):
@@ -35,6 +54,9 @@ class EbayAccount(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     listings = db.relationship("Listing", backref="account", lazy=True)
+    # Deliberately NOT cascade-deleted: removing a connected account shouldn't wipe out
+    # its product catalog, it should just leave those products "unassigned" (see below).
+    products = db.relationship("Product", backref="account", lazy=True)
 
     @property
     def refresh_token(self):
@@ -50,8 +72,10 @@ class EbayAccount(db.Model):
 
 
 class Product(db.Model):
-    """A row imported from a CSV, ready to be listed."""
+    """A row imported from a CSV, ready to be listed. Always belongs to exactly one
+    connected eBay account - each store's product data is kept fully separate."""
     id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey("ebay_account.id"), nullable=True)
     sku = db.Column(db.String(120), nullable=False)
     title = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=True)
@@ -68,7 +92,7 @@ class Product(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    listings = db.relationship("Listing", backref="product", lazy=True)
+    listings = db.relationship("Listing", backref="product", lazy=True, cascade="all, delete-orphan")
 
     MAX_IMAGES = 12  # eBay's hard limit per listing
 
@@ -96,6 +120,40 @@ class Product(db.Model):
     @property
     def image_count(self):
         return len(self.get_image_urls())
+
+    # Extra category-specific details (Size, Color, Material, etc.) beyond the
+    # fixed columns above. Stored as JSON: {"Size": ["Large"], "Color": ["Black"]}
+    # eBay's aspect format always wraps each value in a list, so we mirror that.
+    aspects_json = db.Column(db.Text, nullable=True)
+
+    def get_aspects(self):
+        """Returns the extra aspects as a dict, e.g. {'Size': ['Large'], 'Color': ['Black']}."""
+        if not self.aspects_json:
+            return {}
+        try:
+            return json.loads(self.aspects_json)
+        except (ValueError, TypeError):
+            return {}
+
+    def set_aspects(self, aspects_dict):
+        """Takes a dict of name -> value (or name -> [values]) and stores it as JSON."""
+        cleaned = {}
+        for name, value in (aspects_dict or {}).items():
+            name = str(name).strip()
+            if not name:
+                continue
+            values = value if isinstance(value, list) else [value]
+            values = [str(v).strip() for v in values if str(v).strip()]
+            if values:
+                cleaned[name] = values
+        self.aspects_json = json.dumps(cleaned) if cleaned else None
+
+    def all_aspects(self):
+        """Brand + Color/Size/etc merged into one dict, ready to send to eBay as 'aspects'."""
+        merged = dict(self.get_aspects())
+        if self.brand and "Brand" not in merged:
+            merged["Brand"] = [self.brand]
+        return merged
 
 
 class Listing(db.Model):

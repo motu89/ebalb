@@ -346,6 +346,44 @@ def suggest_leaf_categories(access_token, query, marketplace_id="EBAY_US"):
     ]
 
 
+def get_required_aspects_for_category(access_token, category_id, marketplace_id="EBAY_US"):
+    """
+    GET /commerce/taxonomy/v1/category_tree/{id}/get_item_aspects_for_category?category_id=...
+    Returns the list of aspects eBay actually cares about for this category, each as:
+      {"name": "Size", "required": True, "values": ["S", "M", "L", ...] or None}
+    "values" is None when eBay allows free text for that aspect instead of a fixed list.
+    """
+    base = current_app.config["EBAY_API_BASE"]
+    tree_id = get_default_category_tree_id(access_token, marketplace_id)
+    url = f"{base}/commerce/taxonomy/v1/category_tree/{tree_id}/get_item_aspects_for_category"
+    resp = requests.get(url, headers=_headers(access_token), params={"category_id": category_id}, timeout=20)
+    if resp.status_code != 200:
+        raise EbayAPIError("Fetching required aspects failed", resp.status_code, resp.text)
+
+    aspects = []
+    for a in resp.json().get("aspects", []):
+        constraint = a.get("aspectConstraint", {})
+        values = a.get("aspectValues")
+        aspects.append({
+            "name": a.get("localizedAspectName"),
+            "required": constraint.get("aspectRequired", False),
+            "values": [v.get("localizedValue") for v in values] if values else None,
+        })
+    return aspects
+
+
+def find_missing_required_aspects(access_token, product, category_id, marketplace_id="EBAY_US"):
+    """
+    Cross-checks a product's aspects (Brand + whatever's in its aspects column) against
+    what eBay actually requires for its category. Returns a list of missing aspect names
+    (empty list = good to publish). Call this BEFORE create_or_update_inventory_item so
+    the user gets a clear "missing: Size, Color" instead of a cryptic eBay error later.
+    """
+    required = get_required_aspects_for_category(access_token, category_id, marketplace_id)
+    have = {name.lower() for name in product.all_aspects().keys()}
+    return [a["name"] for a in required if a["required"] and a["name"].lower() not in have]
+
+
 def create_or_update_inventory_item(access_token, sku, product):
     """PUT /sell/inventory/v1/inventory_item/{sku} — step (a) of publishing a listing."""
     base = current_app.config["EBAY_API_BASE"]
@@ -355,9 +393,7 @@ def create_or_update_inventory_item(access_token, sku, product):
     # caps at 12, but we cap again here defensively in case a product was
     # created/edited some other way than the CSV importer.
     image_urls = product.get_image_urls()[:12]
-    aspects = {}
-    if product.brand:
-        aspects["Brand"] = [product.brand]
+    aspects = product.all_aspects()  # Brand + Color/Size/Material/etc, merged
 
     payload = {
         "product": {

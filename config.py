@@ -11,6 +11,9 @@ class Config:
 
     ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin")
+    SUPER_ADMIN_USERNAME = os.environ.get("SUPER_ADMIN_USERNAME")
+    SUPER_ADMIN_PASSWORD = os.environ.get("SUPER_ADMIN_PASSWORD")
+    SUPER_ADMIN_ROUTE_KEY = os.environ.get("SUPER_ADMIN_ROUTE_KEY", "qOZKWRDXX2gsdW2p")
 
     TOKEN_ENCRYPTION_KEY = os.environ.get("TOKEN_ENCRYPTION_KEY")
 

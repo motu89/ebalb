@@ -32,6 +32,11 @@
       <a href="{{ url_for('listings.list_listings') }}" class="nav-item {{ 'active' if request.endpoint == 'listings.list_listings' }}">
         <span class="nav-icon">≡</span> Listings
       </a>
+      {% if current_user.is_super_admin %}
+      <a href="{{ url_for('superadmin.manage_users') }}" class="nav-item {{ 'active' if request.endpoint and request.endpoint.startswith('superadmin.') }}">
+        <span class="nav-icon">*</span> Super Admin
+      </a>
+      {% endif %}
     </nav>
     <div class="sidebar-footer">
       <span class="env-badge">{{ config.EBAY_ENV | upper }}</span>

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Upload results — Listing Pipeline{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Upload results</h1>
+    <p>Imported {{ added }} new product(s){% if updated %}, updated {{ updated }} existing product(s){% endif %}{% if account %} for <strong>{{ account.nickname }}</strong>{% endif %}. Anything below needs your attention before it'll publish cleanly.</p>
+  </div>
+  <a href="{{ url_for('products.list_products') }}" class="btn">Go to Products</a>
+</div>
+
+{% if rows_with_overflow %}
+<div class="panel" style="padding:16px; margin-bottom:20px;">
+  <span class="pill pill-pending">Heads up</span>
+  <span style="margin-left:8px;">{{ rows_with_overflow }} row(s) had more than 12 image URLs — the extras were dropped (eBay's limit is 12).</span>
+</div>
+{% endif %}
+
+{% if not has_connected_account %}
+<div class="panel" style="padding:16px; margin-bottom:20px;">
+  <span class="pill pill-pending">Not checked</span>
+  <span style="margin-left:8px;">
+    No connected eBay store yet, so category-required fields (Size, Color, etc.) couldn't be checked automatically.
+    <a href="{{ url_for('accounts.list_accounts') }}" style="color:var(--accent);">Connect one</a> and re-upload to catch these before you publish.
+  </span>
+</div>
+{% endif %}
+
+{% if skipped_rows %}
+<div class="panel" style="margin-bottom:24px;">
+  <div class="panel-header">Rows that couldn't be imported ({{ skipped_rows|length }})</div>
+  <table>
+    <thead><tr><th>CSV row</th><th>SKU</th><th>Title</th><th>What's missing</th></tr></thead>
+    <tbody>
+      {% for r in skipped_rows %}
+      <tr>
+        <td class="mono">{{ r.row }}</td>
+        <td class="mono">{{ r.sku }}</td>
+        <td>{{ r.title }}</td>
+        <td><span class="pill pill-pending">{{ r.missing | join(', ') }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="text-muted" style="padding:12px 16px; font-size:13px;">
+    Fix these fields in your CSV and re-upload — already-imported rows won't be duplicated as long as you leave them out, or it's fine to re-upload the whole file again.
+  </p>
+</div>
+{% endif %}
+
+{% if category_issues %}
+<div class="panel" style="margin-bottom:24px;">
+  <div class="panel-header">Imported, but missing required fields for their eBay category ({{ category_issues|length }})</div>
+  <table>
+    <thead><tr><th>SKU</th><th>Title</th><th>Category</th><th>Missing</th><th>Add it now</th></tr></thead>
+    <tbody>
+      {% for issue in category_issues %}
+      <tr>
+        <td class="mono">{{ issue.sku }}</td>
+        <td>{{ issue.title }}</td>
+        <td class="mono">{{ issue.category_id }}</td>
+        <td><span class="pill pill-pending">{{ issue.missing | join(', ') }}</span></td>
+        <td>
+          <form method="POST" action="{{ url_for('products.quick_fix', product_id=issue.product_id) }}" style="display:flex; gap:6px; align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="text" name="aspects_text" placeholder="e.g. {{ issue.missing[0] }}:Value" style="width:220px; margin:0;">
+            <button type="submit" class="btn" style="padding:5px 10px; font-size:12px; white-space:nowrap;">Save</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="text-muted" style="padding:12px 16px; font-size:13px;">
+    Format: <code>Key:Value</code>, or several at once like <code>Size:Large|Color:Black</code>. This merges into the product's existing aspects — it won't erase anything already set.
+  </p>
+</div>
+{% endif %}
+
+{% if no_category_products %}
+<div class="panel" style="margin-bottom:24px;">
+  <div class="panel-header">Imported with no category set — can't check requirements yet ({{ no_category_products|length }})</div>
+  <table>
+    <thead><tr><th>SKU</th><th>Title</th><th>Set category now</th></tr></thead>
+    <tbody>
+      {% for p in no_category_products %}
+      <tr>
+        <td class="mono">{{ p.sku }}</td>
+        <td>{{ p.title }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('products.quick_fix', product_id=p.product_id) }}" style="display:flex; gap:6px; align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="text" name="category_id" placeholder="eBay category ID" style="width:160px; margin:0;">
+            <button type="submit" class="btn" style="padding:5px 10px; font-size:12px; white-space:nowrap;">Save</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="text-muted" style="padding:12px 16px; font-size:13px;">
+    Not sure of the category ID? Add one here and re-open this page (or the Products page) to check it against eBay's required fields.
+  </p>
+</div>
+{% endif %}
+{% endblock %}
