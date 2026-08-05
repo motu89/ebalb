@@ -150,6 +150,10 @@ textarea { resize: vertical; min-height: 70px; }
   font-family: var(--font-body); transition: opacity .15s ease;
 }
 .btn:hover { opacity: 0.88; }
+.btn:disabled, input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
 .btn-danger { background: transparent; color: #FF8A73; border: 1px solid rgba(229,88,61,0.4); }
 .btn-small { padding: 7px 10px; font-size: 12px; }
@@ -198,6 +202,15 @@ textarea { resize: vertical; min-height: 70px; }
 .login-card .brand-mark { color: var(--accent); font-size: 26px; }
 .login-card h1 { font-size: 20px; margin-top: 12px; }
 .login-card p.sub { color: var(--text-muted); font-size: 13px; margin-top: 4px; margin-bottom: 4px; }
+.lockout-note {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(232,163,61,0.35);
+  border-radius: 8px;
+  color: var(--amber);
+  background: var(--amber-dim);
+  font-size: 12.5px;
+}
 
 /* ---------- Utility ---------- */
 .text-muted { color: var(--text-muted); }

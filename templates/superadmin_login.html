@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Sign in — Listing Pipeline{% endblock %}
+{% block title %}Super Admin Sign in - Listing Pipeline{% endblock %}
 {% block auth_content %}
 <div class="login-wrap">
   <div class="login-card">
-    <span class="brand-mark">◆</span>
-    <h1>Listing Pipeline</h1>
-    <p class="sub">Sign in to manage your stores and listings.</p>
+    <span class="brand-mark">*</span>
+    <h1>Super Admin</h1>
+    <p class="sub">Sign in to manage admin users and account periods.</p>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -22,10 +22,10 @@
     {% endif %}
 
     <form method="POST">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label for="username">Username</label>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="username">Super admin username</label>
       <input type="text" id="username" name="username" required autofocus {% if wait_seconds %}disabled{% endif %}>
-      <label for="password">Password</label>
+      <label for="password">Super admin password</label>
       <input type="password" id="password" name="password" required {% if wait_seconds %}disabled{% endif %}>
       <div class="btn-row">
         <button type="submit" class="btn" style="width:100%;" {% if wait_seconds %}disabled{% endif %}>Sign in</button>

@@ -40,7 +40,7 @@
     </nav>
     <div class="sidebar-footer">
       <span class="env-badge">{{ config.EBAY_ENV | upper }}</span>
-      <a href="{{ url_for('auth.logout') }}" class="logout-link">Sign out</a>
+      <a href="{{ url_for('superadmin.logout') if current_user.is_super_admin else url_for('auth.logout') }}" class="logout-link">Sign out</a>
     </div>
   </aside>
   <main class="content">

@@ -58,10 +58,28 @@ Username: Z6vcpovQPSrAf3Cs
 Password: hyTtKLpgpUXjsy8b
 ```
 
-The secret super-admin URL is:
+The secret super-admin entry URL is:
 
 ```text
-http://localhost:5000/qOZKWRDXX2gsdW2p/users
+http://localhost:5000/qOZKWRDXX2gsdW2p/
+```
+
+If you are not logged in, it opens the separate super-admin login URL:
+
+```text
+http://localhost:5000/qOZKWRDXX2gsdW2p/login
+```
+
+On Render, use:
+
+```text
+https://ebalb.onrender.com/qOZKWRDXX2gsdW2p/
+```
+
+After login, it opens:
+
+```text
+https://ebalb.onrender.com/qOZKWRDXX2gsdW2p/users
 ```
 
 The route key is set in `.env`:
@@ -72,6 +90,18 @@ SUPER_ADMIN_ROUTE_KEY=qOZKWRDXX2gsdW2p
 
 From that page, create admin accounts, choose their use period, reset their
 passwords, extend their access, or expire them. Expired admins cannot log in.
+
+Render must have these environment variables so it can create the super-admin
+inside the Render database on startup:
+
+```text
+SUPER_ADMIN_ROUTE_KEY=qOZKWRDXX2gsdW2p
+SUPER_ADMIN_USERNAME=Z6vcpovQPSrAf3Cs
+SUPER_ADMIN_PASSWORD=hyTtKLpgpUXjsy8b
+```
+
+After 10 failed login attempts from the same client IP, login is locked for
+5 minutes.
 
 If you lose the super-admin password, rotate it with:
 
@@ -87,8 +117,8 @@ The public privacy policy page is available at:
 http://localhost:5000/privacy
 ```
 
-This URL is also shown on the super-admin users page. For eBay production API
-review, use the deployed HTTPS version of the same path, for example:
+For eBay production API review, use the deployed HTTPS version of the same path,
+for example:
 
 ```text
 https://your-domain.com/privacy
